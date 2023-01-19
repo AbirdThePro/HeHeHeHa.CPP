@@ -12,15 +12,17 @@ cpp = ""
 
 # reads all text from specified file and returns it
 def readFile(filename:str) -> str:
-    with open(filename, "rb") as file:
-        return file.read()
+    try:
+        with open(filename, "rb") as file:
+            return file.read()
+    except FileNotFoundError:
+        return f"File {filename} not found"
 
 def webfile(filename:str) -> str:
     try:
         return readFile("web/" + filename)
     except FileNotFoundError:
-        print(f"File {filename} not found in 'web' directory.")
-        return "Resource not found. Check the file system to make sure it exists and is in the correct location."
+        return "Resource not found in 'web' directory."
 
 # root page (index)
 @app.route("/")
@@ -30,22 +32,28 @@ def root() -> str:
 # dynamic routing (returns resource)
 @app.route("/<resourceName>")
 def get_resource(resourceName:str) -> str:
-    global cpp
-    # checks for changes in the C++ file
-    if cpp != readFile("main.cpp"):
-        # if the file was modified, recompile it
-        if platform == "win32":
-            # Windows
-            system("compile")
-        else:
-            # Mac and Linux
-            system("bash compile.sh")
-    # updates C++ code
-    cpp = readFile("main.cpp")
+    # default mimetype as placeholder
+    mimetype = None
+
+    # checks if WASM file is requested
+    if resourceName.endswith(".wasm"):
+        global cpp
+        # checks for changes in the C++ file
+        if cpp != readFile("main.cpp"):
+            # if the file was modified, recompile it
+            if platform == "win32":
+                # Windows
+                system("compile")
+            else:
+                # Mac and Linux
+                system("bash compile.sh")
+        # updates C++ code
+        cpp = readFile("main.cpp")
+        # updates MIME type to WASM
+        mimetype = "application/wasm"
     
     # return the resource
-    return Response(webfile(resourceName), 200, mimetype="application/wasm")
+    return Response(webfile(resourceName), 200, mimetype=mimetype)
 
-# gets C++ code
-cpp = readFile("main.cpp")
+# starts app
 app.run(host="127.0.0.1", port=8080)

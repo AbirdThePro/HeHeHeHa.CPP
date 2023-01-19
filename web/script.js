@@ -9,11 +9,25 @@ const ctx = canvas.getContext("2d");
 // memory array
 let memoryGlobal;
 
+// clear color
+let clearColor = "white";
+
 // gets null-terminated string from memory buffer
 function getStr(ptr) {
-    let len = ptr - (new Uint8Array(memoryGlobal.buffer).findIndex(item => item === 0));
+    let len = new Uint8Array(memoryGlobal.buffer, ptr).findIndex(item => item === 0);
     let arr = new Uint8Array(memoryGlobal.buffer, ptr, len);
-    return new TextDecoder().decode(arr);
+    let result = new TextDecoder().decode(arr);
+    return result;
+}
+
+// gets color from struct in WASM memory buffer
+function getColor(ptr) {
+    let arr = new Uint8Array(memoryGlobal.buffer, ptr, 4);
+    let r = arr[0];
+    let g = arr[1];
+    let b = arr[2];
+    let a = arr[3];
+    return "rgba(" + r + "," + g + "," + b + "," + a + ")";
 }
 
 // convert number to string
@@ -34,7 +48,19 @@ function setCanvasSize(width, height) {
 
 // set page title
 function setTitle(title) {
-    document.getElementById("title").innerText = getStr(title);
+    document.getElementsByTagName("title")[0].innerText = getStr(title);
+}
+
+// sets clear color
+function setClearColor(color) {
+    clearColor = getColor(color);
+    console.log(clearColor);
+}
+
+// clears canvas
+function clear() {
+    let rect = canvas.getBoundingClientRect();
+    drawRect(clearColor, 0, 0, rect.width, rect.height);
 }
 
 // IMAGE FUNCTIONS
@@ -44,14 +70,11 @@ let images = [];
 
 // load image
 function loadImage(uri) {
-    fetch(uri).then(() => {
-        let img = document.createElement("img", {
-            "src": uri
-        });
-        img.style.display = "none";
-        document.head.appendChild(img);
-    });
-    images += img;
+    let img = new Image();
+    img.src = getStr(uri);
+    img.style.display = "none";
+    document.head.appendChild(img);
+    images[images.length] = img;
     return images.length - 1;
 }
 
@@ -63,7 +86,10 @@ function drawImage(id, x, y) {
 // SHAPE FUNCTIONS
 
 // draws rectangle at position with given size and color
-function drawRect(color, x, y, width, height) {}
+function drawRect(color, x, y, width, height) {
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, width, height);
+}
 
 // sent to WASM
 let imports = {
@@ -72,6 +98,8 @@ let imports = {
         "log": log,
         "setCanvasSize": setCanvasSize,
         "setTitle": setTitle,
+        "setClearColor": setClearColor,
+        "clear": clear,
         "loadImage": loadImage,
         "drawImage": drawImage
     }
@@ -86,11 +114,14 @@ WebAssembly.instantiateStreaming(fetch("main.wasm"), imports).then(
         memoryGlobal = memory;
         log(memoryGlobal);
 
+        let prevTimePassed = 0;
+
         // sets up the game
         setup();
         // starts the game loop
-        const gameLoop = (dt) => {
-            update(dt);
+        const gameLoop = (timePassed) => {
+            update(timePassed - prevTimePassed);
+            prevTimePassed = timePassed;
             requestAnimationFrame(gameLoop);
         };
         gameLoop(0);
