@@ -4,6 +4,7 @@
 typedef unsigned int uint;
 typedef unsigned char uint8_t;
 typedef uint Image;
+typedef uint Audio;
 typedef const char* string;
 
 // structs
@@ -41,7 +42,10 @@ extern "C" {
     void clear();
 
     Image loadImage(string uri);
-    void drawImage(int id, int x, int y);
+    void drawImage(Image id, int x, int y);
+
+    Audio loadAudio(string uri);
+    void playAudio(Audio id, float speed=1, bool loop=false);
 }
 
 // exports

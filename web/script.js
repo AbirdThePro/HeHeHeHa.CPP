@@ -83,6 +83,25 @@ function drawImage(id, x, y) {
     ctx.drawImage(images[id], x, y);
 }
 
+// AUDIO FUNCTIONS
+
+// stores all loaded images
+let sounds = [];
+
+// load image
+function loadAudio(uri) {
+    let audio = new Audio(getStr(uri));
+    sounds[sounds.length] = audio;
+    return sounds.length - 1;
+}
+
+// plays sound
+function playAudio(id, speed=1, loop=false) {
+    sounds[id].loop = loop;
+    sounds[id].playbackRate = speed;
+    sounds[id].play();
+}
+
 // SHAPE FUNCTIONS
 
 // draws rectangle at position with given size and color
@@ -101,7 +120,9 @@ let imports = {
         "setClearColor": setClearColor,
         "clear": clear,
         "loadImage": loadImage,
-        "drawImage": drawImage
+        "drawImage": drawImage,
+        "loadAudio": loadAudio,
+        "playAudio": playAudio
     }
 };
 // create WASM instance

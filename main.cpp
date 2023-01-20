@@ -1,7 +1,8 @@
 #include <lib.h>
 
-string title = "Game\0";
-string testImgUri = "heheheha.png\0";
+string title = "Game";
+string testImgUri = "heheheha.png";
+string testAudioUri = "heheheha.mp3";
 
 float x = 0;
 int direction = 1;
@@ -15,6 +16,7 @@ const uint WIDTH = 640;
 const uint HEIGHT = 512;
 
 Image testImg;
+Audio testAudio;
 
 // runs once at the beginning
 WASM_EXPORT void setup() {
@@ -25,14 +27,21 @@ WASM_EXPORT void setup() {
     setClearColor(&white);
 
     testImg = loadImage(testImgUri);
+    testAudio = loadAudio(testAudioUri);
 }
 
 // runs every frame update
 WASM_EXPORT void update(int deltaTime) {
     clear();
 
-    if (x <= 0) direction = 1;
-    if (x >= WIDTH - imgWidth) direction = -1;
+    if (x <= 0) {
+        direction = 1;
+        playAudio(testAudio, 2);
+    }
+    if (x >= WIDTH - imgWidth) {
+        direction = -1;
+        playAudio(testAudio, 2);
+    }
     x += speed * direction * deltaTime;
 
     drawImage(testImg, x, HEIGHT / 2);
